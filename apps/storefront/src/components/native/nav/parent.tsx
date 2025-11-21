@@ -1,14 +1,18 @@
 'use client'
 
+// components
 import { CommandMenu } from '@/components/composites/command'
 import { MobileNav } from '@/components/native//nav/mobile'
 import { UserNav } from '@/components/native//nav/user'
 import { MainNav } from '@/components/native/nav/desktop'
 import { Button } from '@/components/ui/button'
+// utils
 import { useAuthenticated } from '@/hooks/useAuthentication'
+// assets
 import { LogInIcon, MoonIcon, ShoppingBasketIcon, SunIcon } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
 
 export default function Header() {
    const { authenticated } = useAuthenticated()
@@ -54,6 +58,13 @@ function LoginDialog() {
 
 function ThemeToggle() {
    const { resolvedTheme, setTheme } = useTheme()
+   const [mounted, setMounted] = useState(false)
+
+   useEffect(() => {
+      setMounted(true)
+   }, [])
+
+   if (!mounted) return null
 
    return (
       <Button
