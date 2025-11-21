@@ -121,13 +121,6 @@ function TryComponents({ isLoading, setIsLoading, setFetchedOTP }) {
    async function onSubmitEmail() {
       try {
          setIsLoading(true)
-
-         if (!process.env.JWT_SECRET_KEY) {
-            console.error('JWT secret key is missing')
-            setIsLoading(false)
-            return
-         }
-
          const response = await fetch('/api/auth/otp/email/try', {
             method: 'POST',
             body: JSON.stringify({ email }),
