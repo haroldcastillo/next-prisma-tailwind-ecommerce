@@ -121,7 +121,7 @@ function TryComponents({ isLoading, setIsLoading, setFetchedOTP }) {
    async function onSubmitEmail() {
       try {
          setIsLoading(true)
-         const response = await fetch('/api/auth/otp/email/try', {
+         const response = await fetch('/api/auth/otp/email/login', {
             method: 'POST',
             body: JSON.stringify({ email }),
             cache: 'no-store',
