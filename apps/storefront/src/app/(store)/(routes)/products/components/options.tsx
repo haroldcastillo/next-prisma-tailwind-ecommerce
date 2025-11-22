@@ -1,6 +1,5 @@
 'use client'
 
-// utils
 // Components
 import { Button } from '@/components/ui/button'
 import {
@@ -18,13 +17,6 @@ import {
    PopoverContent,
    PopoverTrigger,
 } from '@/components/ui/popover'
-import {
-   Select,
-   SelectContent,
-   SelectItem,
-   SelectTrigger,
-   SelectValue,
-} from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { useDebounce } from '@/hooks/useDebounce'
 import { useUpdateQueryParam } from '@/hooks/useUpdateQueryParam'
@@ -98,56 +90,94 @@ export function SortBy({ value, onChange }: SortByProps) {
 }
 
 export function PriceRange({
-   minValue,
-   maxValue,
-   minOnChange,
-   maxOnChange,
-   isError,
-   errorMessage,
+   initialMinValue,
+   initialMaxValue,
 }: {
-   minValue?: string
-   maxValue?: string
-   minOnChange?: (value: string) => void
-   maxOnChange?: (value: string) => void
-   isError?: boolean
-   errorMessage?: any
+   initialMinValue?: string
+   initialMaxValue?: string
 }) {
+   const { updateMany } = useUpdateQueryParam()
+   const [minPrice, setMinPrice] = React.useState<string | undefined>(
+      initialMinValue
+   )
+   const [maxPrice, setMaxPrice] = React.useState<string | undefined>(
+      initialMaxValue
+   )
+
+   useEffect(() => {
+      setMinPrice(initialMinValue)
+   }, [initialMinValue])
+
+   useEffect(() => {
+      setMaxPrice(initialMaxValue)
+   }, [initialMaxValue])
+
+   const debouncedMinPrice = useDebounce(minPrice, 500)
+   const debouncedMaxPrice = useDebounce(maxPrice, 500)
+
+   useEffect(() => {
+      updateMany({
+         minPrice: debouncedMinPrice || '',
+         page: '1',
+      })
+   }, [debouncedMinPrice])
+
+   useEffect(() => {
+      updateMany({
+         maxPrice: debouncedMaxPrice || '',
+         page: '1',
+      })
+   }, [debouncedMaxPrice])
+
    return (
       <div>
          <div className="flex items-center gap-1">
             <Input
                type="number"
                placeholder="Min"
-               defaultValue={isVariableValid(minValue) ? minValue : ''}
-               className={cn('w-full', isError ? 'border-red-500' : '')}
+               className={cn(
+                  'w-full',
+                  maxPrice &&
+                     minPrice &&
+                     parseFloat(minPrice) > parseFloat(maxPrice)
+                     ? 'border-red-500'
+                     : ''
+               )}
                min={0}
                onKeyDown={(e) => {
                   if (['e', 'E', '+', '-'].includes(e.key)) {
                      e.preventDefault()
                   }
                }}
-               max={maxValue ? parseFloat(maxValue) : 1000000}
-               onChange={(e) => minOnChange?.(e.target.value)}
+               value={minPrice}
+               max={isVariableValid(maxPrice) ? Number(maxPrice) : 1000000}
+               onChange={(e) => setMinPrice(e.target.value)}
             />
             -
             <Input
                type="number"
                placeholder="Max"
-               defaultValue={isVariableValid(maxValue) ? maxValue : ''}
-               className="w-full"
-               min={minValue}
+               className={cn(
+                  'w-full',
+                  maxPrice &&
+                     minPrice &&
+                     parseFloat(minPrice) > parseFloat(maxPrice)
+                     ? 'border-red-500'
+                     : ''
+               )}
+               min={isVariableValid(minPrice) ? Number(minPrice) : 0}
                onKeyDown={(e) => {
                   if (['e', 'E', '+', '-'].includes(e.key)) {
                      e.preventDefault()
                   }
                }}
+               value={maxPrice}
                max={1000000}
-               onChange={(e) => maxOnChange?.(e.target.value)}
+               onChange={(e) => {
+                  setMaxPrice(e.target.value)
+               }}
             />
          </div>
-         {isError && (
-            <p className="mt-1 text-sm text-red-500">{errorMessage}</p>
-         )}
       </div>
    )
 }
@@ -155,6 +185,16 @@ export function PriceRange({
 export function CategoriesCombobox({ categories, initialCategory, onChange }) {
    const [open, setOpen] = React.useState(false)
    const [value, setValue] = React.useState<string[]>([])
+   const { updateMany } = useUpdateQueryParam()
+
+   const valueDebounce = useDebounce(value, 500)
+
+   useEffect(() => {
+      updateMany({
+         category: value.join('+'),
+         page: '1',
+      })
+   }, [valueDebounce])
 
    function getCategoryTitle() {
       const selectedCategories = categories.filter((category) =>
@@ -171,12 +211,9 @@ export function CategoriesCombobox({ categories, initialCategory, onChange }) {
          updatedList.push(slug)
       }
       setValue(updatedList)
-
-      onChange?.(updatedList.join('+'))
    }
 
    useEffect(() => {
-      // check if initialCategory is defined
       if (!initialCategory) return
 
       const initialSlugs = initialCategory
@@ -235,8 +272,19 @@ export function CategoriesCombobox({ categories, initialCategory, onChange }) {
    )
 }
 
-export function BrandCombobox({ brands, value, onChange }) {
+export function BrandCombobox({ brands, initialValue }) {
    const [open, setOpen] = React.useState(false)
+   const [value, setValue] = React.useState(initialValue)
+
+   const { updateMany } = useUpdateQueryParam()
+   const debounceValue = useDebounce(value, 500)
+
+   useEffect(() => {
+      updateMany({
+         brand: debounceValue,
+         page: '1',
+      })
+   }, [debounceValue])
 
    function getBrandTitle() {
       for (const brand of brands) {
@@ -272,7 +320,12 @@ export function BrandCombobox({ brands, value, onChange }) {
                                  key={brand.title}
                                  value={brand.title}
                                  onSelect={() => {
-                                    onChange?.(brand.id)
+                                    if (value !== brand.id) {
+                                       setValue(brand.id)
+                                    } else {
+                                       setValue('')
+                                    }
+
                                     setOpen(false)
                                  }}
                                  className={`flex align-start content-start hover:opacity-100 cursor-pointer ${isSelected ? 'opacity-100' : 'opacity-50'}`}

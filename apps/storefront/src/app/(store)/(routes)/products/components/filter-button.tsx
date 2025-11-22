@@ -8,9 +8,9 @@ import {
    PopoverContent,
    PopoverTrigger,
 } from '@/components/ui/popover'
-import { useUpdateQueryParam } from '@/hooks/useUpdateQueryParam'
-import { set } from 'date-fns'
 // utils
+import { useDebounce } from '@/hooks/useDebounce'
+import { useUpdateQueryParam } from '@/hooks/useUpdateQueryParam'
 import { useFormik } from 'formik'
 import { Sliders } from 'lucide-react'
 import { useEffect, useState } from 'react'
@@ -100,13 +100,6 @@ export function FilterButton({
          open={open}
          onOpenChange={() => {
             setOpen(!open)
-            formik.setValues({
-               sort: sort || '',
-               brand: brand || '',
-               categories: category || '',
-               minPrice: minPrice || '',
-               maxPrice: maxPrice || '',
-            })
          }}
       >
          <PopoverTrigger asChild>
@@ -139,12 +132,12 @@ export function FilterButton({
                <div className="grid gap-2">
                   <Label className="pb-2">Sort By</Label>
                   <SortBy
-                     value={formik.values.sort}
+                     value={sort}
                      onChange={(value) => {
-                        if (value !== formik.values.sort) {
-                           formik.setFieldValue('sort', value)
+                        if (value !== sort) {
+                           updateMany({ sort: value })
                         } else {
-                           formik.setFieldValue('sort', '')
+                           updateMany({ sort: '' })
                         }
                      }}
                   />
@@ -153,54 +146,28 @@ export function FilterButton({
                   <Label className="pb-2">Category</Label>
                   <CategoriesCombobox
                      categories={categories}
-                     initialCategory={formik.values.categories}
-                     onChange={(value) =>
-                        formik.setFieldValue('categories', value)
-                     }
+                     initialCategory={category}
+                     onChange={(value) => {
+                        updateMany({
+                           category: value,
+                        })
+                        toast.success('Category filter updated')
+                     }}
                   />
                </div>
                <div className="grid gap-2">
                   <Label className="pb-2">Price Range</Label>
                   <PriceRange
-                     minValue={formik.values.minPrice}
-                     maxValue={formik.values.maxPrice}
-                     minOnChange={(value) =>
-                        formik.setFieldValue('minPrice', value)
-                     }
-                     maxOnChange={(value) =>
-                        formik.setFieldValue('maxPrice', value)
-                     }
-                     isError={
-                        formik.touched.minPrice || formik.touched.maxPrice
-                           ? !!(
-                                formik.errors.minPrice || formik.errors.maxPrice
-                             )
-                           : false
-                     }
-                     errorMessage={
-                        formik.errors.minPrice || formik.errors.maxPrice || ''
-                     }
+                     initialMaxValue={maxPrice}
+                     initialMinValue={minPrice}
                   />
                </div>
                <div className="grid gap-2">
                   <Label className="pb-2">Brand</Label>
-                  <BrandCombobox
-                     brands={brands}
-                     value={formik.values.brand}
-                     onChange={(value) => formik.setFieldValue('brand', value)}
-                  />
+                  <BrandCombobox brands={brands} initialValue={brand} />
                </div>
 
                <Button
-                  type="submit"
-                  onClick={() => {
-                     formik.handleSubmit()
-                  }}
-               >
-                  Apply Filters
-               </Button>
-               <Button
-                  variant="ghost"
                   onClick={() => {
                      formik.resetForm()
                      updateMany({
