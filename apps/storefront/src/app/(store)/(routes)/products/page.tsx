@@ -1,6 +1,15 @@
 import { ProductGrid, ProductSkeletonGrid } from '@/components/native/Product'
 import { Heading } from '@/components/native/heading'
 import { Separator } from '@/components/native/separator'
+import {
+   Pagination,
+   PaginationContent,
+   PaginationEllipsis,
+   PaginationItem,
+   PaginationLink,
+   PaginationNext,
+   PaginationPrevious,
+} from '@/components/ui/pagination'
 import prisma from '@/lib/prisma'
 import { isVariableValid } from '@/lib/utils'
 
@@ -88,6 +97,22 @@ export default async function Products({ searchParams }) {
          ) : (
             <ProductSkeletonGrid />
          )}
+         <Pagination>
+            <PaginationContent>
+               <PaginationItem>
+                  <PaginationPrevious href="#" />
+               </PaginationItem>
+               <PaginationItem>
+                  <PaginationLink href="#">1</PaginationLink>
+               </PaginationItem>
+               <PaginationItem>
+                  <PaginationEllipsis />
+               </PaginationItem>
+               <PaginationItem>
+                  <PaginationNext href="#" />
+               </PaginationItem>
+            </PaginationContent>
+         </Pagination>
       </>
    )
 }
