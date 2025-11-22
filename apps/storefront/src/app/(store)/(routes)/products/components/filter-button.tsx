@@ -9,11 +9,9 @@ import {
    PopoverTrigger,
 } from '@/components/ui/popover'
 // utils
-import { useDebounce } from '@/hooks/useDebounce'
 import { useUpdateQueryParam } from '@/hooks/useUpdateQueryParam'
-import { useFormik } from 'formik'
 import { Sliders } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
 
 import {
@@ -33,67 +31,20 @@ export function FilterButton({
    maxPrice,
 }) {
    const [open, setOpen] = useState(false)
-   const [filterCount, setFilterCount] = useState(0)
    const { updateMany } = useUpdateQueryParam()
 
-   const formik = useFormik({
-      initialValues: {
-         sort: sort || '',
-         brand: brand || '',
-         categories: category || '',
-         minPrice: minPrice || '',
-         maxPrice: maxPrice || '',
-      },
-      validate: (values) => {
-         const errors: Record<string, string> = {}
-         const min = parseFloat(values.minPrice)
-         const max = parseFloat(values.maxPrice)
-         if (values.minPrice && isNaN(min)) {
-            errors.minPrice = 'Minimum price must be a valid number'
-         }
-         if (values.maxPrice && isNaN(max)) {
-            errors.maxPrice = 'Maximum price must be a valid number'
-         }
-         if (!errors.minPrice && !errors.maxPrice) {
-            if (!isNaN(min) && !isNaN(max) && min > max) {
-               errors.minPrice =
-                  'Minimum price cannot be greater than maximum price'
-            }
-         }
-         return errors
-      },
-      onSubmit: (values) => {
-         updateMany({
-            sort: values.sort,
-            brand: values.brand,
-            category: values.categories,
-            minPrice: values.minPrice,
-            maxPrice: values.maxPrice,
-         })
-         toast.success('Filters applied successfully')
-         setOpen(false)
-      },
-   })
-   useEffect(() => {
+   const filterCount = useMemo(() => {
       let count = 0
-      if (formik.values.sort) count++
-      if (formik.values.brand) count++
-      if (formik.values.categories) {
-         formik.values.categories.split('+').forEach(() => {
-            count++
-         })
+      if (sort) count += 1
+      if (brand) count += 1
+      if (category) {
+         const categoryList = category.split('+').filter(Boolean)
+         count += categoryList.length
       }
-      if (formik.values.minPrice) count++
-      if (formik.values.maxPrice) count++
-
-      setFilterCount(count)
-   }, [
-      formik.values.sort,
-      formik.values.brand,
-      formik.values.categories,
-      formik.values.minPrice,
-      formik.values.maxPrice,
-   ])
+      if (minPrice) count += 1
+      if (maxPrice) count += 1
+      return count
+   }, [sort, brand, category, minPrice, maxPrice])
 
    return (
       <Popover
@@ -115,7 +66,7 @@ export function FilterButton({
                   {filterCount > 0 && (
                      <span
                         className="absolute -top-1 -right-3 flex h-3 w-3 items-center justify-center
-        rounded-full bg-primary text-[6px] font-bold text-primary-foreground"
+        rounded-full bg-primary text-[11px] font-bold text-primary-foreground"
                      >
                         {filterCount}
                      </span>
@@ -169,7 +120,6 @@ export function FilterButton({
 
                <Button
                   onClick={() => {
-                     formik.resetForm()
                      updateMany({
                         sort: '',
                         brand: '',
@@ -177,7 +127,6 @@ export function FilterButton({
                         minPrice: '',
                         maxPrice: '',
                      })
-                     setFilterCount(0)
                      toast.success('Filters cleared successfully')
                      setOpen(false)
                   }}

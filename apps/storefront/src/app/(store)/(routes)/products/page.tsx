@@ -4,6 +4,7 @@ import { Separator } from '@/components/native/separator'
 import { PaginationComponent } from '@/components/ui/pagination'
 import prisma from '@/lib/prisma'
 import { isVariableValid } from '@/lib/utils'
+import { FolderX } from 'lucide-react'
 
 import { FilterButton } from './components/filter-button'
 import { SearchInput } from './components/options'
@@ -61,7 +62,16 @@ export default async function Products({ searchParams }) {
          />
          <Separator />
          {isVariableValid(products) ? (
-            <ProductGrid products={products} />
+            <>
+               {products.length > 0 ? (
+                  <ProductGrid products={products} />
+               ) : (
+                  <div className="flex flex-col items-center h-[50vh]  justify-center text-muted-foreground opacity-30">
+                     <FolderX className="mb-4 h-12 w-12" />
+                     <p>No products found.</p>
+                  </div>
+               )}
+            </>
          ) : (
             <ProductSkeletonGrid />
          )}
