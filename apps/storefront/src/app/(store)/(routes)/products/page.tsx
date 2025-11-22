@@ -4,37 +4,53 @@ import { Separator } from '@/components/native/separator'
 import prisma from '@/lib/prisma'
 import { isVariableValid } from '@/lib/utils'
 
-import {
-   AvailableToggle,
-   BrandCombobox,
-   CategoriesCombobox,
-   SortBy,
-} from './components/options'
+import { FilterButton } from './components/filter-button'
+import { SearchInput } from './components/options'
 
 export default async function Products({ searchParams }) {
-   const { sort, isAvailable, brand, category, page = 1 } = searchParams ?? null
+   const {
+      sort,
+      isAvailable,
+      brand,
+      category,
+      page = 1,
+      search,
+      minPrice,
+      maxPrice,
+   } = searchParams ?? null
 
    const orderBy = getOrderBy(sort)
 
    const brands = await prisma.brand.findMany()
    const categories = await prisma.category.findMany()
+
+   const categoryList = category ? category.split('+').filter(Boolean) : null
    const products = await prisma.product.findMany({
       where: {
+         title: {
+            contains: search,
+            mode: 'insensitive',
+         },
          isAvailable: isAvailable == 'true' || sort ? true : undefined,
          brand: {
-            title: {
-               contains: brand,
-               mode: 'insensitive',
-            },
+            id: brand || undefined,
          },
-         categories: {
-            some: {
-               title: {
-                  contains: category,
-                  mode: 'insensitive',
-               },
-            },
+         price: {
+            gte: minPrice ? Number(minPrice) : undefined,
+            lte: maxPrice ? Number(maxPrice) : undefined,
          },
+         categories: categoryList
+            ? {
+                 some: {
+                    OR: categoryList.map((c) => ({
+                       title: {
+                          contains: c,
+                          mode: 'insensitive',
+                       },
+                    })),
+                 },
+              }
+            : undefined,
       },
       orderBy,
       skip: (page - 1) * 12,
@@ -50,16 +66,22 @@ export default async function Products({ searchParams }) {
          <Heading
             title="Products"
             description="Below is a list of products you have in your cart."
+            specialDiv={
+               <div className="flex gap-3">
+                  <SearchInput initialData={searchParams?.search || ''} />
+                  <FilterButton
+                     brands={brands}
+                     categories={categories}
+                     sort={sort}
+                     brand={brand}
+                     category={category}
+                     minPrice={minPrice}
+                     maxPrice={maxPrice}
+                  />
+               </div>
+            }
          />
-         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 mb-4">
-            <SortBy initialData={sort} />
-            <CategoriesCombobox
-               initialCategory={category}
-               categories={categories}
-            />
-            <BrandCombobox initialBrand={brand} brands={brands} />
-            <AvailableToggle initialData={isAvailable} />
-         </div>
+
          <Separator />
          {isVariableValid(products) ? (
             <ProductGrid products={products} />
@@ -74,13 +96,6 @@ function getOrderBy(sort) {
    let orderBy
 
    switch (sort) {
-      case 'featured':
-         orderBy = {
-            orders: {
-               _count: 'desc',
-            },
-         }
-         break
       case 'most_expensive':
          orderBy = {
             price: 'desc',
@@ -92,6 +107,17 @@ function getOrderBy(sort) {
          }
          break
 
+      case 'title_asc':
+         orderBy = {
+            title: 'asc',
+         }
+         break
+
+      case 'title_desc':
+         orderBy = {
+            title: 'desc',
+         }
+         break
       default:
          orderBy = {
             orders: {
