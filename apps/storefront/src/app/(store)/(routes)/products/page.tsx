@@ -1,15 +1,7 @@
 import { ProductGrid, ProductSkeletonGrid } from '@/components/native/Product'
 import { Heading } from '@/components/native/heading'
 import { Separator } from '@/components/native/separator'
-import {
-   Pagination,
-   PaginationContent,
-   PaginationEllipsis,
-   PaginationItem,
-   PaginationLink,
-   PaginationNext,
-   PaginationPrevious,
-} from '@/components/ui/pagination'
+import { PaginationComponent } from '@/components/ui/pagination'
 import prisma from '@/lib/prisma'
 import { isVariableValid } from '@/lib/utils'
 
@@ -34,40 +26,17 @@ export default async function Products({ searchParams }) {
    const categories = await prisma.category.findMany()
 
    const categoryList = category ? category.split('+').filter(Boolean) : null
-   const products = await prisma.product.findMany({
-      where: {
-         title: {
-            contains: search,
-            mode: 'insensitive',
-         },
-         isAvailable: isAvailable == 'true' || sort ? true : undefined,
-         brand: {
-            id: brand || undefined,
-         },
-         price: {
-            gte: minPrice ? Number(minPrice) : undefined,
-            lte: maxPrice ? Number(maxPrice) : undefined,
-         },
-         categories: categoryList
-            ? {
-                 some: {
-                    OR: categoryList.map((c) => ({
-                       title: {
-                          contains: c,
-                          mode: 'insensitive',
-                       },
-                    })),
-                 },
-              }
-            : undefined,
-      },
+
+   const { products, pagination } = await getPaginatedProducts({
+      search,
+      isAvailable,
+      sort,
+      brand,
+      minPrice,
+      maxPrice,
+      categoryList,
+      page,
       orderBy,
-      skip: (page - 1) * 12,
-      take: 12,
-      include: {
-         brand: true,
-         categories: true,
-      },
    })
 
    return (
@@ -90,29 +59,16 @@ export default async function Products({ searchParams }) {
                </div>
             }
          />
-
          <Separator />
          {isVariableValid(products) ? (
             <ProductGrid products={products} />
          ) : (
             <ProductSkeletonGrid />
          )}
-         <Pagination>
-            <PaginationContent>
-               <PaginationItem>
-                  <PaginationPrevious href="#" />
-               </PaginationItem>
-               <PaginationItem>
-                  <PaginationLink href="#">1</PaginationLink>
-               </PaginationItem>
-               <PaginationItem>
-                  <PaginationEllipsis />
-               </PaginationItem>
-               <PaginationItem>
-                  <PaginationNext href="#" />
-               </PaginationItem>
-            </PaginationContent>
-         </Pagination>
+         <PaginationComponent
+            totalPages={pagination.totalPages}
+            currentPage={pagination.currentPage}
+         />
       </>
    )
 }
@@ -153,4 +109,91 @@ function getOrderBy(sort) {
    }
 
    return orderBy
+}
+
+export async function getPaginatedProducts({
+   search,
+   isAvailable,
+   sort,
+   brand,
+   minPrice,
+   maxPrice,
+   categoryList,
+   page = 1,
+   pageSize = 10,
+   orderBy,
+}: {
+   search?: string
+   isAvailable?: string
+   sort?: string
+   brand?: string
+   minPrice?: string
+   maxPrice?: string
+   categoryList?: string[]
+   page?: number
+   pageSize?: number
+   orderBy?: any
+}) {
+   const where = {
+      title: search
+         ? {
+              contains: search,
+              mode: 'insensitive' as const,
+           }
+         : undefined,
+
+      isAvailable: isAvailable == 'true' || sort ? true : undefined,
+
+      brand: brand
+         ? {
+              id: brand,
+           }
+         : undefined,
+
+      price:
+         minPrice || maxPrice
+            ? {
+                 gte: minPrice ? Number(minPrice) : undefined,
+                 lte: maxPrice ? Number(maxPrice) : undefined,
+              }
+            : undefined,
+
+      categories: categoryList
+         ? {
+              some: {
+                 OR: categoryList.map((c) => ({
+                    title: {
+                       contains: c,
+                       mode: 'insensitive' as const,
+                    },
+                 })),
+              },
+           }
+         : undefined,
+   }
+
+   const totalCount = await prisma.product.count({ where })
+
+   const totalPages = Math.ceil(totalCount / pageSize)
+
+   const products = await prisma.product.findMany({
+      where,
+      orderBy,
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      include: {
+         brand: true,
+         categories: true,
+      },
+   })
+
+   return {
+      products,
+      pagination: {
+         totalCount,
+         totalPages,
+         currentPage: page,
+         pageSize,
+      },
+   }
 }
