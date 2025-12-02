@@ -23,7 +23,7 @@ import { useUpdateQueryParam } from '@/hooks/use-update-query-param'
 // utils
 import { cn, isVariableValid } from '@/lib/utils'
 import { slugify } from '@persepolis/slugify'
-import { format, toDate } from 'date-fns'
+import { format } from 'date-fns'
 // Icons
 import { Check, ChevronsUpDown } from 'lucide-react'
 import React, { useEffect } from 'react'
@@ -40,12 +40,28 @@ export function CategoriesCombobox({ categories, initialCategory }) {
 
    const valueDebounce = useDebounce(value, 500)
 
+   const firstMount = React.useRef(true)
+   const initialValueRef = React.useRef(value)
+
    useEffect(() => {
-      updateMany({
-         category: value.join('+'),
-         page: '1',
-      })
-   }, [valueDebounce])
+      if (firstMount.current) {
+         firstMount.current = false
+         initialValueRef.current = valueDebounce
+         return
+      }
+
+      // Only update if the value has actually changed
+      if (
+         JSON.stringify(initialValueRef.current) !==
+         JSON.stringify(valueDebounce)
+      ) {
+         updateMany({
+            category: valueDebounce.join('+'),
+            page: '1',
+         })
+         initialValueRef.current = valueDebounce
+      }
+   }, [valueDebounce, updateMany])
 
    function getCategoryTitle() {
       const selectedCategories = categories.filter((category) =>
@@ -130,12 +146,25 @@ export function BrandCombobox({ brands, initialValue }) {
    const { updateMany } = useUpdateQueryParam()
    const debounceValue = useDebounce(value, 500)
 
+   const firstMount = React.useRef(true)
+   const initialValueRef = React.useRef(value)
+
    useEffect(() => {
-      updateMany({
-         brand: debounceValue,
-         page: '1',
-      })
-   }, [debounceValue])
+      if (firstMount.current) {
+         firstMount.current = false
+         initialValueRef.current = debounceValue
+         return
+      }
+
+      // Only update if the value has actually changed
+      if (initialValueRef.current !== debounceValue) {
+         updateMany({
+            brand: debounceValue,
+            page: '1',
+         })
+         initialValueRef.current = debounceValue
+      }
+   }, [debounceValue, updateMany])
 
    function getBrandTitle() {
       for (const brand of brands) {
@@ -205,35 +234,67 @@ export function DateRange({ from, to }) {
    const [toValue, setToValue] = React.useState(to)
 
    const { updateMany } = useUpdateQueryParam()
+   const debouncedFromValue = useDebounce(fromValue, 500)
+   const debouncedToValue = useDebounce(toValue, 500)
+
+   const firstMountFrom = React.useRef(true)
+   const firstMountTo = React.useRef(true)
+   const initialFromRef = React.useRef(fromValue)
+   const initialToRef = React.useRef(toValue)
 
    useEffect(() => {
-      if (toValue && isVariableValid(toValue)) {
-         const formattedToDate = format(new Date(toValue), 'yyyy-MM-dd')
-         updateMany({
-            endDate: formattedToDate,
-            page: '1',
-         })
-      } else {
-         updateMany({
-            endDate: '',
-            page: '1',
-         })
+      if (firstMountFrom.current) {
+         firstMountFrom.current = false
+         initialFromRef.current = debouncedFromValue
+         return
       }
-   }, [toValue])
+
+      if (initialFromRef.current !== debouncedFromValue) {
+         if (debouncedFromValue && isVariableValid(debouncedFromValue)) {
+            const formattedFromDate = format(
+               new Date(debouncedFromValue),
+               'yyyy-MM-dd'
+            )
+            updateMany({
+               startDate: formattedFromDate,
+               page: '1',
+            })
+         } else {
+            updateMany({
+               startDate: '',
+               page: '1',
+            })
+         }
+         initialFromRef.current = debouncedFromValue
+      }
+   }, [debouncedFromValue, updateMany])
+
    useEffect(() => {
-      if (fromValue && isVariableValid(fromValue)) {
-         const formattedFromDate = format(new Date(fromValue), 'yyyy-MM-dd')
-         updateMany({
-            startDate: formattedFromDate,
-            page: '1',
-         })
-      } else {
-         updateMany({
-            startDate: '',
-            page: '1',
-         })
+      if (firstMountTo.current) {
+         firstMountTo.current = false
+         initialToRef.current = debouncedToValue
+         return
       }
-   }, [fromValue])
+
+      if (initialToRef.current !== debouncedToValue) {
+         if (debouncedToValue && isVariableValid(debouncedToValue)) {
+            const formattedToDate = format(
+               new Date(debouncedToValue),
+               'yyyy-MM-dd'
+            )
+            updateMany({
+               endDate: formattedToDate,
+               page: '1',
+            })
+         } else {
+            updateMany({
+               endDate: '',
+               page: '1',
+            })
+         }
+         initialToRef.current = debouncedToValue
+      }
+   }, [debouncedToValue, updateMany])
 
    return (
       <div className="flex items-end space-x-2">

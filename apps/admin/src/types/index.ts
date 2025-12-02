@@ -3,6 +3,7 @@ export type ProductInfo = {
    title: string
    totalQuantity: number
    orderCount: number
+   image?: string
 }
 
 export type OrderItem = {
@@ -28,4 +29,5 @@ export type Order = {
    shipping: number
    createdAt: string
    orderItems: OrderItem[]
+   payable: number
 }
