@@ -11,8 +11,6 @@ import {
    CommandList,
 } from '@/components/ui/command'
 import { DatePickerComponent } from '@/components/ui/date-picker'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import {
    Popover,
    PopoverContent,
@@ -28,10 +26,6 @@ import { format } from 'date-fns'
 import { Check, ChevronsUpDown } from 'lucide-react'
 import React, { useEffect } from 'react'
 
-type SortByProps = {
-   value?: string
-   onChange?: (value: string) => void
-}
 
 export function CategoriesCombobox({ categories, initialCategory }) {
    const [open, setOpen] = React.useState(false)
