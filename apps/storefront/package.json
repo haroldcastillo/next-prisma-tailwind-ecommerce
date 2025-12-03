@@ -52,7 +52,7 @@
       "cmdk": "^1.0.0",
       "date-fns": "^4.1.0",
       "embla-carousel-autoplay": "^8.3.0",
-      "embla-carousel-react": "^8.3.0",
+      "embla-carousel-react": "^8.6.0",
       "formik": "^2.4.9",
       "jose": "^5.9.4",
       "lucide-react": "^0.452.0",
