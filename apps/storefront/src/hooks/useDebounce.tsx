@@ -28,3 +28,31 @@ export function useDebounce<T>(value: T, delay: number = 300): T {
 
    return debouncedValue
 }
+
+
+
+/**
+ * @description Debounce function to limit the rate at which a function can fire.
+ * 
+ * @param fn - The function to be debounced.
+ * @param delay - The delay in milliseconds before the function can be called again. Default is 300ms.
+ * @example
+ * const debouncedFunction = debounce(() => { console.log('Debounced!') }, 500);
+ * 
+ * @author Harold
+ * @since 12-3-2025
+ * @returns A debounced version of the input function.
+ */
+export function debounce<F extends (...args: any[]) => void>(
+   fn: F,
+   delay = 300
+) {
+   let timer: ReturnType<typeof setTimeout>
+
+   return function (this: any, ...args: Parameters<F>) {
+      clearTimeout(timer)
+      timer = setTimeout(() => {
+         fn.apply(this, args)
+      }, delay)
+   }
+}
