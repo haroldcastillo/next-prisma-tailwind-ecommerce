@@ -104,7 +104,7 @@ Created by [Amirhossein Mohammadi](https://github.com/sesto-dev).
 
 
 
-## 📘 Developer Assessment Additions
+## 📘 Developer Assessment Additions (Harold)
 
 ### Introduction
 This project was developed as part of my Developer Assessment Exam. The goal of the assessment is to extend the existing next-prisma-tailwind-ecommerce application by implementing new features that enhance both the storefront and the admin panel.
